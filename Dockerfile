@@ -11,10 +11,10 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 
 # Copy package files first for better Docker layer caching
-COPY package.json package-lock.json* ./
+COPY package.json ./
 
 # Install production dependencies only
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 # ── Stage 2: Production image ──────────────────────────────────────────────
 FROM node:20-alpine AS runner

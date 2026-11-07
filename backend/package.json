@@ -2,6 +2,7 @@
   "name": "fluxer-chat-backend",
   "version": "1.0.0",
   "description": "Fluxer Chat — WebSocket backend deployed on Render free tier",
+  "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

@@ -1,0 +1,47 @@
+# =============================================================================
+# Render Blueprint — Fluxer Chat Backend
+# =============================================================================
+# This file tells Render how to build and run the backend service.
+# Connect your GitHub repo in the Render dashboard and it will auto-detect
+# this blueprint.
+#
+# Docs: https://docs.render.com/blueprint-spec
+# =============================================================================
+
+services:
+  - type: web
+    name: fluxer-chat-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./backend
+    plan: free
+    region: oregon
+
+    # Health check endpoint for Render's internal monitoring
+    healthCheckPath: /health
+
+    # Build & deploy settings
+    branch: main
+    autoDeploy: true         # Also triggered by our GitHub Actions workflow
+
+    envVars:
+      # ── Database ──────────────────────────────────────────────────────
+      - key: DATABASE_URL
+        sync: false          # Set manually in Render dashboard (Neon connection string)
+
+      # ── CORS ──────────────────────────────────────────────────────────
+      # Your GitHub Pages domain. Update this after enabling Pages.
+      # Format: https://<username>.github.io
+      - key: CORS_ORIGIN
+        sync: false          # Set manually in Render dashboard
+
+      # ── Application ──────────────────────────────────────────────────
+      - key: NODE_ENV
+        value: production
+
+      - key: PORT
+        value: "10000"       # Render exposes this port on free tier
+
+      # ── Optional: JWT secret for auth (generate a random string) ────
+      - key: JWT_SECRET
+        generateValue: true  # Render auto-generates a 256-bit secret

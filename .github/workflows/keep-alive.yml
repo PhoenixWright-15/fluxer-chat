@@ -1,0 +1,49 @@
+# =============================================================================
+# Fluxer Chat — Keep-Alive Cron Job
+# =============================================================================
+# Render's free tier spins down containers after 15 minutes of inactivity.
+# This workflow pings the backend every 10 minutes to prevent cold starts
+# and keep WebSocket connections alive.
+#
+# ⚠️  IMPORTANT: GitHub Actions cron jobs have no SLA on timing. GitHub may
+#     delay or skip runs during high-load periods. For truly critical uptime,
+#     consider supplementing with an external pinger (e.g., UptimeRobot free).
+# =============================================================================
+
+name: Keep Backend Alive
+
+on:
+  schedule:
+    # Run every 10 minutes, 24/7
+    - cron: "*/10 * * * *"
+  workflow_dispatch: # Allow manual ping
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping backend health endpoint
+        env:
+          BACKEND_URL: ${{ vars.BACKEND_URL }}
+        run: |
+          echo "🏓 Pinging Fluxer backend to prevent spin-down..."
+          echo "   Target: $BACKEND_URL/health"
+          echo "   Time:   $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo ""
+
+          status=$(curl -s -o /tmp/health_response.json -w "%{http_code}" \
+            --max-time 30 \
+            --retry 3 \
+            --retry-delay 5 \
+            "$BACKEND_URL/health")
+
+          if [ "$status" -eq 200 ]; then
+            echo "✅ Backend is alive (HTTP $status)"
+            cat /tmp/health_response.json 2>/dev/null || true
+          else
+            echo "⚠️  Backend returned HTTP $status"
+            echo "   This may indicate a cold start in progress."
+            cat /tmp/health_response.json 2>/dev/null || true
+            # Don't fail the job — the next ping will retry
+          fi
